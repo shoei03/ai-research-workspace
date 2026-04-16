@@ -1,6 +1,10 @@
 ---
 name: lint-wiki
-description: wiki の健康診断。孤立ページ・リンク切れ・矛盾・カバレッジ不足を検出する
+description: >
+  wiki の健康診断。孤立ページ・リンク切れ・矛盾・カバレッジ不足・frontmatter 不備・
+  テンプレート準拠度・research positioning の鮮度を検出する。
+  wiki のチェック、整合性確認、品質確認、
+  「wiki 大丈夫？」「リンク切れない？」「ページ足りてる？」のような依頼で使う。
 disable-model-invocation: true
 argument-hint: /lint-wiki
 ---
@@ -9,73 +13,54 @@ argument-hint: /lint-wiki
 
 `wiki/` の構造的健全性をチェックするスキル。ingest を繰り返すうちに発生するほつれを発見する。
 
-## 実行手順
+## 前提知識
 
-### 1. index.md の整合性
+- papers の frontmatter: `title`, `authors`, `venue`, `year`, `bibkey`, `tags`
+- papers の末尾: `## 関連 concept` に `[[concept-name]]` 形式でリンク
+- concepts の frontmatter: `name`, `description`, `type`
+- index.md: 通常の Markdown リンク `[text](path)` 形式
+- テンプレート定義: [wiki-paper-template.md](../ingest-paper/references/wiki-paper-template.md)
 
-- `wiki/index.md` に列挙されているページが実在するか
-- `wiki/papers/` と `wiki/concepts/` の実ファイルが index にすべて載っているか
+---
 
-### 2. 孤立ページ検出
+## チェックリスト
 
-- `wiki/papers/*.md` のうち、どの concept からも `[[...]]` 参照されていないページ
-- `wiki/concepts/*.md` のうち、どの paper からもタグ / リンクされていないページ
+以下の 10 項目を順にチェックする。各項目の詳細手順は [references/check-details.md](references/check-details.md) を参照。
 
-孤立ページは**即削除しない**。ユーザーに提示して判断を仰ぐ。
+| # | チェック | 概要 |
+|---|---|---|
+| 1 | index.md 整合性 | リンク先の実在 + 実ファイルの漏れ |
+| 2 | frontmatter 検証 | papers/concepts の必須フィールド |
+| 3 | テンプレート準拠 | wiki-paper-template.md の 8 セクション (7/8 以上で合格) |
+| 4 | tags ↔ concepts | tags に書かれた concept が実在するか (双方向) |
+| 5 | 関連 concept リンク | `[[concept-name]]` のリンク先が実在するか |
+| 6 | 孤立ページ | どこからも参照されていないページ |
+| 7 | 矛盾検出 | `## 議論` 節の未解決矛盾 |
+| 8 | カバレッジ不足 | current.md の概念が wiki/concepts/ にあるか |
+| 9 | positioning 鮮度 | 本研究の立ち位置記述が現在の current.md と整合するか |
+| 10 | bibkey 整合性 | frontmatter の bibkey と refs.bib の突合 |
 
-### 3. リンク切れ検出
+§9 が特に重要: current.md は頻繁に更新されるため、wiki の positioning 記述が陳腐化しやすい。ズレの検出時は **パターン A** (関連あり・記述ズレ → 更新推奨) と **パターン B** (関連薄 → 注釈追加推奨) に分類する。詳細は [references/check-details.md](references/check-details.md) §9 を参照。
 
-`[[wiki/...]]` 形式のリンクを全 wiki から Grep し、リンク先が実在するか検証。
+---
 
-### 4. 矛盾検出
+## 報告書
 
-各 concept ページで `## 議論 / 矛盾` 節を探し、未解決の矛盾を一覧化。
-ユーザーに「どちらの主張を採用するか、保留するか」を促す。
+[references/report-template.md](references/report-template.md) のフォーマットに従って結果を報告する。
 
-### 5. カバレッジ不足検出
+---
 
-`my-research/current.md` で言及される概念名（例: `no-escape 述語`, `provenance`, `refuse-based soundness`）を Grep し、それぞれに対応する `wiki/concepts/` ページが存在するか確認。
+## references
 
-不足している概念は「my-research で主張しているが wiki に事実ページがない = 論文化時に引用する文献がない」という危険信号。
+| ファイル | 内容 |
+|---|---|
+| [references/check-details.md](references/check-details.md) | 各チェック項目の詳細手順 |
+| [references/report-template.md](references/report-template.md) | 報告書のフォーマット |
 
-### 6. bibkey 整合性
-
-`wiki/papers/*.md` の frontmatter の `bibkey` と `paper/common/refs.bib` の BibTeX キーが一致しているか。
-
-### 7. 報告書
-
-以下の形式でレポート：
-
-```markdown
-# lint-wiki report [YYYY-MM-DD]
-
-## 索引整合性
-- ✅ / ❌
-
-## 孤立ページ
-- wiki/papers/xxx.md （どこからも参照なし）
-
-## リンク切れ
-- wiki/concepts/yyy.md:42 → [[wiki/papers/zzz]] (not found)
-
-## 未解決の矛盾
-- wiki/concepts/equivalence-checking.md §議論: SLACC と EquiBench で ...
-
-## カバレッジ不足
-- my-research で言及されているが wiki/concepts/ に存在しない:
-  - refuse-based-soundness
-  - no-escape-predicate
-
-## bibkey 不整合
-- ...
-
-## 推奨アクション
-1. ...
-2. ...
-```
+---
 
 ## 注意事項
 
-- **自動修正はしない**。あくまで検出と提案に留める
+- **自動修正はしない**。検出と提案に留める
 - 孤立ページの削除はユーザー許可が必要
-- 定期的に（月1程度）手動で走らせる運用を想定
+- 定期的に（月1程度、または大量 ingest 後に）走らせる運用を想定
