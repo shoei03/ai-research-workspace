@@ -69,7 +69,7 @@ textlint が自動検証するので、編集後は必ず `pnpm run lint` を実
 編集後、以下を実行：
 
 ```bash
-cd ~/dev/research/thesis-workspace && pnpm run lint
+cd ~/dev/research/ai-research-workspace && pnpm run lint
 ```
 
 エラーがあれば修正。`pnpm run fix` で自動修正できるものは修正する。

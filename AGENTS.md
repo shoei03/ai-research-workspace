@@ -1,4 +1,4 @@
-# thesis-workspace
+# ai-research-workspace
 
 研究・論文執筆・文献管理を1つの作業ディレクトリで完結させるワークスペース。
 
@@ -7,7 +7,7 @@
 ## ディレクトリ構成
 
 ```
-thesis-workspace/
+ai-research-workspace/
 ├── AGENTS.md                  # このファイル（実体）
 ├── CLAUDE.md                  # → AGENTS.md (symlink)
 │

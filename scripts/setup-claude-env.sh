@@ -10,13 +10,13 @@ if [ -f "$SETTINGS" ]; then
   exit 0
 fi
 
-echo "=== thesis-workspace セットアップ ==="
+echo "=== ai-research-workspace セットアップ ==="
 echo ""
 echo "スキル (trace-to-source 等) が参照するパスを設定します。"
 echo ""
 
 read -rp "解析対象のソースコードリポジトリの絶対パス: " code_dir
-read -rp "この thesis-workspace の絶対パス [$(pwd)]: " paper_dir
+read -rp "この ai-research-workspace の絶対パス [$(pwd)]: " paper_dir
 paper_dir="${paper_dir:-$(pwd)}"
 
 # パス存在チェック

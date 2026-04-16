@@ -1,4 +1,4 @@
-# thesis-workspace
+# ai-research-workspace
 
 研究・論文執筆・文献管理を Claude Code と連携して行うワークスペーステンプレート。
 
@@ -10,7 +10,7 @@
 
 ```bash
 git clone <this-repo>
-cd thesis-workspace
+cd ai-research-workspace
 pnpm install          # textlint + prh
 brew install poppler  # PDF テキスト抽出 (ingest-paper skill に必要)
 ```
@@ -18,7 +18,7 @@ brew install poppler  # PDF テキスト抽出 (ingest-paper skill に必要)
 ## ディレクトリ構成
 
 ```
-thesis-workspace/
+ai-research-workspace/
 ├── .agents/skills/        # Claude Code skill (自動検出)
 ├── ai-guide/              # AI 向けガイド (LaTeX 規約等)
 │

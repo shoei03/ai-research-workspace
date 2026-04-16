@@ -1,19 +1,19 @@
 ---
 name: query-wiki
-description: thesis-workspace の wiki を検索し、質問に対して引用付きで回答する。論文執筆中や実装中の文献参照に使う
+description: ai-research-workspace の wiki を検索し、質問に対して引用付きで回答する。論文執筆中や実装中の文献参照に使う
 disable-model-invocation: true
 argument-hint: /query-wiki <質問文>
 ---
 
 # query-wiki スキル
 
-`~/dev/research/thesis-workspace/wiki/` を検索し、引用付きで回答するスキル。
+`~/dev/research/ai-research-workspace/wiki/` を検索し、引用付きで回答するスキル。
 **workspace 外から呼ばれた場合**（MB-scanner など）も、絶対パスで wiki を参照する。
 
 ## 呼び出しパターン
 
 - workspace 内: 相対パス `wiki/` を使う
-- workspace 外: 絶対パス `~/dev/research/thesis-workspace/wiki/` を使う
+- workspace 外: 絶対パス `~/dev/research/ai-research-workspace/wiki/` を使う
 
 ## 実行手順
 

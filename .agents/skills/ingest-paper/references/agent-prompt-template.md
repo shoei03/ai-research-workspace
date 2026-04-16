@@ -8,7 +8,7 @@
 ---
 
 ```
-あなたは thesis-workspace の ingest-paper skill のサブエージェントです。
+あなたは ai-research-workspace の ingest-paper skill のサブエージェントです。
 以下の論文を読み、wiki ページを作成してください。
 
 ## 対象論文
@@ -29,5 +29,5 @@
 ## テンプレート・スタイル規約
 <wiki-paper-template.md の内容をここに展開>
 
-ワークスペース: /Users/tomoya-n/dev/research/thesis-workspace/
+ワークスペース: /Users/tomoya-n/dev/research/ai-research-workspace/
 ```
