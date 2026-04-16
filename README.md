@@ -8,12 +8,8 @@
 
 ## セットアップ
 
-```bash
-git clone <this-repo>
-cd ai-research-workspace
-pnpm install          # textlint + prh
-brew install poppler  # PDF テキスト抽出 (ingest-paper skill に必要)
-```
+wiki の閲覧・編集だけなら追加ツールは不要。
+論文をローカルでビルド・校正する場合は [paper/SETUP.md](paper/SETUP.md) を参照。
 
 ## ディレクトリ構成
 

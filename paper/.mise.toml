@@ -1,0 +1,7 @@
+[tools]
+node = "22"
+pnpm = "10"
+
+[tasks.setup]
+description = "Install dependencies"
+run = "pnpm install"

@@ -62,13 +62,13 @@
         "plaintext"
     ],
     // textlintの設定ファイルのパス
-    "textlint.configPath": ".textlintrc",
+    "textlint.configPath": "paper/.textlintrc",
     // 【重要】node_modules内のtextlintを使う設定
     // これを書かなくても動くことが多いですが、明示するとトラブルが減ります
-    "textlint.nodePath": "./node_modules",
-    // textlintをワークスペースルートから実行
+    "textlint.nodePath": "./paper/node_modules",
+    // textlintをpaper/ディレクトリから実行
     "textlint.workingDirectory": {
-        "directory": "."
+        "directory": "paper"
     },
     // LaTeX ファイル専用の設定
     "[latex]": {
