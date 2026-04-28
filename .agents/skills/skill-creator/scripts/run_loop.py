@@ -8,7 +8,8 @@ overfitting.
 Modified from the upstream Anthropic skill-creator (Apache-2.0): the
 `anthropic` SDK import and client initialization were removed so the loop
 runs against subscription auth only. Description improvement now goes
-through `claude -p --effort` (see improve_description.py).
+through `claude -p --effort` (see improve_description.py). See ../NOTICE
+for upstream attribution.
 """
 
 import argparse

@@ -5,10 +5,11 @@ Takes eval results (from run_eval.py) and generates an improved description
 by calling `claude -p --effort max` (subprocess), so it works on a Claude
 subscription (Pro/Max) without requiring an ANTHROPIC_API_KEY.
 
-This is a fork of the official skill-creator's improve_description.py:
-the original used the anthropic SDK with extended thinking; this version
+Modified from the upstream Anthropic skill-creator (Apache-2.0): the
+original used the `anthropic` SDK with extended thinking; this version
 uses `claude -p --effort <level>` which exposes thinking via the same
-subscription auth that powers Claude Code itself.
+subscription auth that powers Claude Code itself. See ../NOTICE for
+upstream attribution.
 """
 
 import argparse

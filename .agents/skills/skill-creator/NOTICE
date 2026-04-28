@@ -1,0 +1,45 @@
+skill-creator (fork)
+====================
+
+This directory contains a derivative work based on Anthropic's
+"skill-creator" plugin, distributed under the Apache License, Version 2.0.
+See LICENSE.txt for the full license text.
+
+Original work
+-------------
+Name:      skill-creator
+Author:    Anthropic, PBC <support@anthropic.com>
+Source:    https://github.com/anthropics/claude-plugins-official/tree/main/plugins/skill-creator
+Obtained:  via the `claude-plugins-official` marketplace
+           (https://github.com/anthropics/claude-plugins-official)
+           at marketplace SHA 020446a4294f09d9c32e60bff0c4ae8fb39205cb
+License:   Apache License, Version 2.0
+
+Copyright (c) Anthropic, PBC. Licensed under the Apache License, Version 2.0.
+The original distribution did not include a NOTICE file or an explicit
+copyright line in LICENSE.txt; this attribution is supplied by the fork
+author for clarity and is not a claim of authorship over the upstream work.
+
+Modifications by this fork
+--------------------------
+Maintainer: tomoya0318 <noguchitomoya0318@gmail.com>
+
+Summary of changes relative to upstream:
+
+- Removed the runtime dependency on the `anthropic` Python SDK so the
+  skill no longer requires an `ANTHROPIC_API_KEY`.
+- Rewired `scripts/improve_description.py` to call `claude -p --effort <level>`
+  via subprocess, reusing the same Claude subscription auth that powers
+  Claude Code itself.
+- Updated `scripts/run_loop.py` to drop the SDK client initialization and
+  consume the new subprocess-based description improver.
+- Added/updated SKILL.md with a fork notice and pointer to this NOTICE.
+
+This fork is not affiliated with, sponsored by, or endorsed by Anthropic.
+
+Trademarks
+----------
+"Anthropic" and "Claude" are trademarks of Anthropic, PBC. Use of those
+names in this NOTICE and in SKILL.md is solely to describe the origin of
+the upstream work, as permitted by Section 6 of the Apache License,
+Version 2.0.

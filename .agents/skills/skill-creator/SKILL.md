@@ -6,7 +6,11 @@ description: Create new skills, modify and improve existing skills, and measure 
 # Skill Creator
 
 > **Fork notice.** This is a fork of Anthropic's skill-creator (Apache-2.0,
-> see `LICENSE.txt`). Modifications: dropped the `anthropic` SDK
+> see `LICENSE.txt` and `NOTICE`).
+> Upstream: <https://github.com/anthropics/claude-plugins-official/tree/main/plugins/skill-creator>
+> (obtained via the `claude-plugins-official` marketplace at SHA
+> `020446a4294f09d9c32e60bff0c4ae8fb39205cb`).
+> Modifications: dropped the `anthropic` SDK
 > dependency and routed the description-improvement call through
 > `claude -p --effort max` so the loop runs entirely on subscription
 > auth (no `ANTHROPIC_API_KEY` needed). Not affiliated with or endorsed
