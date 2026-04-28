@@ -9,7 +9,7 @@ source: https://github.com/Wakayama-SocSEL/Lab-all/wiki/学会リスト (2026-04
 
 サーベイ・論文 ingest・関連研究調査の **中心的探索対象**．Wakayama-SocSEL Lab の学会リストをベースに，国内のみの venue を除外したもの．
 
-> **注意**: このリストは SE (Software Engineering) 系に強く偏っている．本研究 (JS 性能書換規則の条件抽出 + プログラム合成) は **PL (Programming Languages) 系**の venue (POPL, PLDI, OOPSLA, ECOOP, ICFP) も同等以上に重要．§補足 を参照．
+> **注意**: このリストは SE (Software Engineering) 系に強く偏っている．研究テーマによっては **PL (Programming Languages) 系**の venue (POPL, PLDI, OOPSLA, ECOOP, ICFP) も同等以上に重要．§補足 を参照．
 
 ---
 
@@ -52,7 +52,7 @@ source: https://github.com/Wakayama-SocSEL/Lab-all/wiki/学会リスト (2026-04
 
 ## 補足: PL / Verification 系国際会議 
 
-上記 SE リストには含まれていないが，**本研究 (rewrite rule inference / equivalence / program synthesis / weakest precondition) では SE 会議と同等以上に重要**な venue:
+上記 SE リストには含まれていないが，**PL/Verification 系のテーマでは SE 会議と同等以上に重要**な venue:
 
 | レベル | 略称 | フルネーム / 分野 |
 |---|---|---|
@@ -70,7 +70,7 @@ source: https://github.com/Wakayama-SocSEL/Lab-all/wiki/学会リスト (2026-04
 | 超級 | **SAS** | Static Analysis Symposium |
 | 超級 | **APLAS** | Asian Symposium on Programming Languages and Systems |
 
-**論拠**: Hydra (OOPSLA 2024), PEC (PLDI 2009), egg (POPL 2021), Ruler (OOPSLA 2021), Enumo (OOPSLA 2023), Alive2 (PLDI 2021), Bi-abduction (POPL 2009 / JACM 2011), Alive-Infer (PLDI 2017) など，本研究の直接の先行研究はすべてこの PL/Verification 系から出ている．
+**論拠**: rewrite rule inference / equivalence / program synthesis / weakest precondition といったテーマの主要な先行研究はこの PL/Verification 系 venue から出ているケースが多い．
 
 ---
 
@@ -94,7 +94,7 @@ source: https://github.com/Wakayama-SocSEL/Lab-all/wiki/学会リスト (2026-04
 
 ### 探索の順序
 1. **DBLP** で venue 別に最新号の目次を直接走査 (検索バイアスを回避)
-2. **Google Scholar** で本研究の主要先行 (Hydra, Alive-Infer, Ruler 等) の被引用追跡
+2. **Google Scholar** で本研究の主要先行論文の被引用追跡
 3. **arxiv** で年指定検索 (cs.PL + cs.SE の直近 2 年)
 
 ---

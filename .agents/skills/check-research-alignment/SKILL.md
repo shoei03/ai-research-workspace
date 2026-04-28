@@ -1,12 +1,12 @@
 ---
 name: check-research-alignment
-description: 研究計画 (current.md) と実装の整合性を能動的にチェックする。「この実装は研究方針と合ってる？」「いま書いているコードは current.md のどこに対応する？」「次に何を実装すべき？」「この設計判断の根拠は？」「方針からずれていないか？」「code-map に追加すべき実装は？」など、実装と研究計画の照合に関わる文脈で必ずこのスキルを使う。MB-scanner のソースコードを編集している時、ai-research-workspace で実装計画を立てている時、設計判断・優先度・整合性に関する質問が来たら、明示的に呼ばれなくても自動でこのスキルを発火させること
+description: 研究計画 (current.md) と実装の整合性を能動的にチェックする。「この実装は研究方針と合ってる？」「いま書いているコードは current.md のどこに対応する？」「次に何を実装すべき？」「この設計判断の根拠は？」「方針からずれていないか？」「code-map に追加すべき実装は？」など、実装と研究計画の照合に関わる文脈で必ずこのスキルを使う。対象のソースコードリポジトリを編集している時、ai-research-workspace で実装計画を立てている時、設計判断・優先度・整合性に関する質問が来たら、明示的に呼ばれなくても自動でこのスキルを発火させること
 ---
 
 # check-research-alignment スキル
 
 研究計画 (`current.md`) と実装の整合性を能動的にチェックするスキル。
-ai-research-workspace と MB-scanner (ソースコード側) の両方から呼ばれる。
+ai-research-workspace と対象のソースコードリポジトリ (ソースコード側) の両方から呼ばれる。
 
 `query-wiki` が「事実ベース (論文・概念の定義)」を扱うのに対し、本スキルは「**主張ベース** (本研究の方針・段階・設計判断)」と実装の整合性チェックに特化する。
 
@@ -55,7 +55,7 @@ source-code モードで `ai-guide/current-research.md` が古い疑いがある
 
 ### E. code-map 追加提案 (ai-research モード専用)
 
-1. MB-scanner の実装ファイル一覧を Glob (`~/dev/research/MB-scanner/main/mb_scanner/**/*.py` 等)
+1. ソースコードリポジトリの実装ファイル一覧を Glob (`$TRACE_CODE_DIR/**/*.py` 等)
 2. `code-map.md` に記載のないファイルを検出
 3. `current.md` の §章 (主に §4 C-1〜C-5) と照合して追加すべきエントリを提案
 

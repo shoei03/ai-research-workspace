@@ -8,7 +8,7 @@ argument-hint: /write-paper <節や段落の指示>
 # write-paper スキル
 
 `paper/<venue>-<year>/sections/*.tex` を編集するスキル。
-textlint ルールに準拠し、my-research / wiki / MB-scanner コードと一貫性を保つ。
+textlint ルールに準拠し、my-research / wiki / ソースコードリポジトリと一貫性を保つ。
 
 ## 対象パス
 
@@ -20,7 +20,7 @@ textlint ルールに準拠し、my-research / wiki / MB-scanner コードと一
   - `ai-guide/venues.md`（投稿先候補・引用元 venue の Tier 分類）
   - `wiki/reference-strategy.md`（**引用戦略**: 論文構成 → 引用カテゴリ → 必須論文の対応表）
   - `paper/common/refs.bib`（BibTeX）
-  - `MB-scanner/main/`（実装・`trace-to-source` 経由）
+  - ソースコードリポジトリ（実装・`trace-to-source` 経由）
 
 ## 執筆規約（textlint + prh.yml 由来）
 

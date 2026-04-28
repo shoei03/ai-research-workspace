@@ -1,13 +1,13 @@
 ---
 name: query-wiki
-description: ai-research-workspace の wiki を検索して引用付きで回答する。「SLACC の simion とは？」「EquiBench と HyClone の違いは？」「動的等価性検証の手法一覧」「この論文はどう主張している？」「どの会議を見るべき？」「どの論文を引くべき？」など、論文・概念・ドメイン事実の照会、文献サーベイ、引用元の確認に関わる文脈で必ずこのスキルを使う。明示的に呼ばれなくても、論文の主張や概念の定義を確認したい場面では自動でこのスキルを発火させること。ソースコード側 (MB-scanner 等) からも絶対パスで wiki を参照する
+description: ai-research-workspace の wiki を検索して引用付きで回答する。「SLACC の simion とは？」「EquiBench と HyClone の違いは？」「動的等価性検証の手法一覧」「この論文はどう主張している？」「どの会議を見るべき？」「どの論文を引くべき？」など、論文・概念・ドメイン事実の照会、文献サーベイ、引用元の確認に関わる文脈で必ずこのスキルを使う。明示的に呼ばれなくても、論文の主張や概念の定義を確認したい場面では自動でこのスキルを発火させること。ソースコードリポジトリ側からも絶対パスで wiki を参照する
 argument-hint: /query-wiki <質問文>
 ---
 
 # query-wiki スキル
 
 `~/dev/research/ai-research-workspace/wiki/` を検索し、引用付きで回答するスキル。
-**workspace 外から呼ばれた場合**（MB-scanner など）も、絶対パスで wiki を参照する。
+**workspace 外から呼ばれた場合**（ソースコードリポジトリなど）も、絶対パスで wiki を参照する。
 
 ## 呼び出しパターン
 

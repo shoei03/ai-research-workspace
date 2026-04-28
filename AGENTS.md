@@ -24,7 +24,7 @@ ai-research-workspace/
 │   ├── versions/vN_YYYY-MM-DD.md
 │   ├── drafts/                # 節単位の作業中ドラフト
 │   ├── open-questions.md
-│   └── code-map.md            # §章 ↔ MB-scanner モジュール対応
+│   └── code-map.md            # §章 ↔ ソースコードモジュール対応
 │
 ├── wiki/                      # llm-wiki（事実ベース、安定）
 │   ├── index.md               # 全ページ索引
