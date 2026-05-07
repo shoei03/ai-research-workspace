@@ -1,0 +1,195 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{../common/macros}
+\usepackage{layout}
+\usepackage{url}
+\usepackage{amssymb}
+\usepackage{array}
+
+\title{研究ストーリー}
+\author{S2620154　吉田 将衛}
+\renewcommand{\today}{\the\year 年\the\month 月\the\day 日}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{quote}
+  \textbf{一言で言うと（elevator pitch）}\\
+  ドキュメント記述に頼らず、代替が存在する非推奨化候補を
+  コード構造・使用パターン・Git 履歴から自動検出する手法を提案する
+  （動機: 代替追加 $\rightarrow$ @Deprecated 付与まで平均 \textbf{8年} のラグが存在する）
+\end{quote}
+
+\section*{確定済みスコープ}
+
+\begin{tabular}{|p{3.5cm}|p{4.5cm}|p{6cm}|}
+  \hline
+  \textbf{項目} & \textbf{決定内容} & \textbf{根拠・備考} \\
+  \hline
+  エコシステム & Java & Sawant et al. の先行研究群に準拠 \\
+  \hline
+  ターゲットベニュー & SCAM & ソースコード解析・MSR 寄りの貢献が評価される \\
+  \hline
+  ステークホルダー & 提供者（API producer）向け & Sawant 2019「提供者ポリシーが消費者行動を動かす」と整合 \\
+  \hline
+  フレーム & \textbf{手法提案（doc-free 検出）} & Javadoc に書いてあれば開発者はすでに知っている $\rightarrow$ ドキュメント非依存シグナルで価値を出す \\
+  \hline
+\end{tabular}
+
+\section{背景}
+
+\begin{itemize}
+  \item 削除と破壊的変更
+    \begin{itemize}
+      \item メソッドをいきなり削除すれば使用者にとっては実行時エラーを引き起こす破壊的変更となる~\cite{brito2017java-bc,xavier2017why-break-apis}
+    \end{itemize}
+  \item 削除前の非推奨化
+    \begin{itemize}
+      \item 使わないように促す非推奨ラベルをメソッドにつける~\cite{sawant2018why-deprecated}
+      \item 開発者は代替機能への置き換えを理由にメソッドを非推奨化する割合が高い~\cite{sawant2018why-deprecated}
+    \end{itemize}
+  \item 提供者の保守負債問題:
+    \begin{itemize}
+      \item 使われない、あるいは使わない方が良い機能が非推奨化されずに放置されることでコードベースを圧迫する
+      \item 代替機能が追加されているにもかかわらず、旧機能の非推奨化が後回しになる、または忘れられるケースが生じる\todo{Motivation Exampleに繋がる}
+      \item 非推奨化のタイミングが遅れると消費者側の移行も遅延する（\cite{sawant2019api-evolution}: 提供者ポリシーが消費者行動を左右する）
+    \end{itemize}
+  \item ソフトウェアの肥大化
+    \begin{itemize}
+      \item ソフトウェアは開発年数と共に肥大化\todo{非推奨化されないことが原因で肥大化するのか、単に時間が経つと肥大化するのかは要検討}
+    \end{itemize}
+  \item ソフトウェアの縮小
+    \begin{itemize}
+      \item ソフトウェアの肥大化を抑制
+        \begin{itemize}
+          \item もう使われていないメソッド、使わない方が良いメソッド\todo{どんなメソッドなのかはしっかり定義すべき}を非推奨化して削除する
+        \end{itemize}
+    \end{itemize}
+  \item 非推奨化が遅延する理由
+    \begin{itemize}
+      \item \todo{開発者が気づいていない？開発者は気づいている？}
+      \item 代替機能を検出し、非推奨化可能なメソッドを開発者に提供することで非推奨化が促進できる？
+    \end{itemize}
+\end{itemize}
+
+\section{Motivation Example}
+
+（2026-05-04 計測済み）
+
+\begin{tabular}{|p{5cm}|p{4cm}|p{5cm}|}
+  \hline
+  \textbf{指標} & \textbf{値} & \textbf{補足} \\
+  \hline
+  \texttt{has\_replacement\_pct} & \textbf{15.9\%} & @Deprecated 全件中 Javadoc に代替メソッド記載あり \\
+  \hline
+  \texttt{alt\_found\_pct} & \textbf{93.9\%} & 記載ありのうち Git から代替を自動発見できた割合 \\
+  \hline
+  \texttt{nf\_first\_pct} & \textbf{12.6\%} & @Deprecated 全件中「代替が先に追加」のケース \\
+  \hline
+  \texttt{nf\_first / has\_replacement} & \textbf{$\approx$ 79\%} & Javadoc 代替記載ありの約8割が NF 先 \\
+  \hline
+  \texttt{lead\_time\_mean}（NF先のみ） & \textbf{2,904日（約8年）} & 代替追加 $\rightarrow$ @Deprecated 付与までの平均ラグ \\
+  \hline
+\end{tabular}
+
+\medskip
+$\rightarrow$ \textbf{観察}: Javadoc に書いてあるケースですら8年放置される。
+Javadoc にすら書かれていないケースはさらに多数存在するはず。
+
+\section{アプローチ（提案手法）}
+
+\textbf{ドキュメント非依存の deprecated 候補検出}
+
+\begin{enumerate}
+  \item \textbf{動機付け分析}（Javadoc 分析 OK）: Motivation Example の数値で「8年放置が常態」を示す
+  \item \textbf{シグナル選定}（ドキュメント禁止）: 以下の特徴量を設計
+    \begin{itemize}
+      \item 使用パターン変化: caller が method A $\rightarrow$ method B へ段階的移行（Git 履歴）
+      \item コード構造類似: 同クラス内での類似シグネチャ・重複パラメータ（AST 解析）
+      \item コミット共変: method B 追加コミットで method A の caller が同時変更
+      \item 命名パターン: \texttt{getX} / \texttt{getXNew}、\texttt{doY} / \texttt{doYV2} など規則的ペア
+    \end{itemize}
+  \item \textbf{検出}: 上記特徴量で非推奨化候補を特定するモデル/ルール
+  \item \textbf{評価}: 後に @Deprecated が付いたメソッドを、付与\textit{前}の時点で検出できるか（precision / recall）
+\end{enumerate}
+
+\section{Research Questions}
+
+\subsection*{動機付け（実証済み、Javadoc 分析）}
+
+代替追加 $\rightarrow$ @Deprecated まで平均 8年（NF先 79\%）$\rightarrow$「今この瞬間にも大量の放置候補がある」
+
+\subsection{RQ1: 提案手法は代替機能をどの程度検出できるか}
+
+\begin{itemize}
+  \item 説明変数：入出力が同じか、メソッドが類似しているか\todo{検出手法は要検討}
+  \item 検出できたメソッドとできなかったメソッドの違いは何か
+  \item 非推奨化直前だと検出しやすいか
+  \item スナップショットで類似機能を検索し、
+\end{itemize}
+
+\subsection{RQ2: 代替機能を持つメソッドはどのタイミングで非推奨化可能か（学部研究に近い）}
+
+\textbf{Javadoc 等のドキュメントを使わず、コード構造・使用パターン・Git 履歴のみで
+「放置 deprecated 候補」を自動検出できるか？}
+
+\begin{itemize}
+  \item 代替機能が登場した瞬間に予測できるのが理論値最速
+\end{itemize}
+
+\subsubsection*{評価方法}
+
+\begin{itemize}
+  \item Ground Truth: deprecated が付与されたメソッド
+  \item メソッドを見て、今後8年以内でメソッドが非推奨になるかどうか予測
+\end{itemize}
+
+\section{期待される貢献}
+
+\begin{itemize}
+  \item[$\checkmark$] 代替追加 $\rightarrow$ @Deprecated のラグが平均8年という定量的実証（パイロット済み）
+  \item[$\square$] 複数 Java OSS プロジェクトにわたる大規模定量分析（RQ1）
+  \item[$\square$] ドキュメント非依存の特徴量設計（コード構造・使用パターン・Git）
+  \item[$\square$] 上記特徴量による deprecated 候補検出手法の提案と精度評価（RQ2）
+\end{itemize}
+
+\section{差別化・位置づけ}
+
+\begin{tabular}{|p{2.5cm}|p{5.5cm}|p{5.5cm}|}
+  \hline
+  \textbf{軸} & \textbf{先行研究} & \textbf{本研究} \\
+  \hline
+  対象 & 非推奨化後の消費者行動（Sawant 2019, Cogo 2021） & \textbf{非推奨化されていない}放置候補の発見 \\
+  \hline
+  シグナル & @Deprecated 解析 / 手動分析 & \textbf{ドキュメント非依存}（コード・使用・Git） \\
+  \hline
+  貢献 & 非推奨化の分類・影響測定 & 8年放置の実証 + ドキュメント不要の検出手法 \\
+  \hline
+  ステークホルダー & 消費者（移行コスト） & 提供者（気づいていない保守負債の可視化） \\
+  \hline
+\end{tabular}
+
+\section{ストーリーの変遷}
+
+\begin{tabular}{|p{2cm}|p{2.5cm}|p{9cm}|}
+  \hline
+  \textbf{バージョン} & \textbf{日付} & \textbf{主な変更} \\
+  \hline
+  v1 & 2026-04-28 & 初稿（雛形作成） \\
+  \hline
+  v2 & 2026-04-28 & 問題設定の甘いポイント整理・ステークホルダーを提供者向けに確定・スコープ（Java/SCAM）確定 \\
+  \hline
+  v3 & 2026-04-28 & パイロット実証の結果パターン別シナリオ（A〜H）を追記 \\
+  \hline
+  v4 & 2026-05-04 & パイロット実証数値取得。フレームを ``prediction / early detection'' から ``Deprecation Debt Discovery'' へピボット。 \\
+  \hline
+  v5 & 2026-05-04 & 手法提案論文として再設計。Javadoc 依存の RQ2 を廃止。ドキュメント非依存シグナル（コード・使用・Git）による候補検出を手法の核心に。 \\
+  \hline
+\end{tabular}
+
+% ===== 参考文献 =====
+\bibliographystyle{jplain}
+\bibliography{../common/refs}
+
+\end{document}

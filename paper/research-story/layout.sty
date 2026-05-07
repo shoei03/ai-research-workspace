@@ -1,0 +1,55 @@
+%% layout.sty — タイトル・氏名・章見出しのフォントサイズと余白の調整
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{layout}[2026/04/21 assignment layout settings]
+
+\RequirePackage{geometry}
+\RequirePackage{titlesec}
+\RequirePackage{titling}
+
+% ---------------------------------------------------------------
+% 余白
+% ---------------------------------------------------------------
+\geometry{
+  top    = 25mm,
+  bottom = 25mm,
+  left   = 25mm,
+  right  = 25mm,
+}
+
+% ---------------------------------------------------------------
+% タイトル
+% ---------------------------------------------------------------
+\pretitle{\begin{center}\fontsize{18}{22}\selectfont\bfseries}
+\posttitle{\par\end{center}\vskip 0.5em}
+
+% ---------------------------------------------------------------
+% 著者名
+% ---------------------------------------------------------------
+\preauthor{\begin{center}\fontsize{12}{16}\selectfont}
+\postauthor{\par\end{center}}
+
+% ---------------------------------------------------------------
+% 日付
+% ---------------------------------------------------------------
+\predate{\begin{center}\fontsize{11}{14}\selectfont}
+\postdate{\par\end{center}\vskip 1em}
+
+% ---------------------------------------------------------------
+% 章・節見出し
+%   titlesec 書式: \titleformat{コマンド}{形状}{ラベル}{ラベルと本文の間隔}{前処理}
+%   \titlespacing*{コマンド}{左余白}{上余白}{下余白}
+% ---------------------------------------------------------------
+\titleformat{\section}
+  {\fontsize{14}{18}\selectfont\bfseries}
+  {\thesection}{1em}{}
+\titlespacing*{\section}{0pt}{2ex}{1ex}
+
+\titleformat{\subsection}
+  {\fontsize{12}{16}\selectfont\bfseries}
+  {\thesubsection}{1em}{}
+\titlespacing*{\subsection}{0pt}{1.5ex}{0.5ex}
+
+\titleformat{\subsubsection}
+  {\fontsize{11}{14}\selectfont\itshape}
+  {\thesubsubsection}{1em}{}
+\titlespacing*{\subsubsection}{0pt}{1ex}{0.3ex}
