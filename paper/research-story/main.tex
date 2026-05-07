@@ -39,39 +39,66 @@
 
 \section{背景}
 
+\subsection*{破壊的変更と非推奨化の役割}
+
 \begin{itemize}
-  \item 削除と破壊的変更
-    \begin{itemize}
-      \item メソッドをいきなり削除すれば使用者にとっては実行時エラーを引き起こす破壊的変更となる~\cite{brito2017java-bc,xavier2017why-break-apis}
-    \end{itemize}
-  \item 削除前の非推奨化
-    \begin{itemize}
-      \item 使わないように促す非推奨ラベルをメソッドにつける~\cite{sawant2018why-deprecated}
-      \item 開発者は代替機能への置き換えを理由にメソッドを非推奨化する割合が高い~\cite{sawant2018why-deprecated}
-    \end{itemize}
-  \item 提供者の保守負債問題:
-    \begin{itemize}
-      \item 使われない、あるいは使わない方が良い機能が非推奨化されずに放置されることでコードベースを圧迫する
-      \item 代替機能が追加されているにもかかわらず、旧機能の非推奨化が後回しになる、または忘れられるケースが生じる\todo{Motivation Exampleに繋がる}
-      \item 非推奨化のタイミングが遅れると消費者側の移行も遅延する（\cite{sawant2019api-evolution}: 提供者ポリシーが消費者行動を左右する）
-    \end{itemize}
-  \item ソフトウェアの肥大化
-    \begin{itemize}
-      \item ソフトウェアは開発年数と共に肥大化\todo{非推奨化されないことが原因で肥大化するのか、単に時間が経つと肥大化するのかは要検討}
-    \end{itemize}
-  \item ソフトウェアの縮小
-    \begin{itemize}
-      \item ソフトウェアの肥大化を抑制
-        \begin{itemize}
-          \item もう使われていないメソッド、使わない方が良いメソッド\todo{どんなメソッドなのかはしっかり定義すべき}を非推奨化して削除する
-        \end{itemize}
-    \end{itemize}
-  \item 非推奨化が遅延する理由
-    \begin{itemize}
-      \item \todo{開発者が気づいていない？開発者は気づいている？}
-      \item 代替機能を検出し、非推奨化可能なメソッドを開発者に提供することで非推奨化が促進できる？
-    \end{itemize}
+  \item ライブラリの提供者（API producer）が既存のメソッドを削除・変更するとき、
+        消費者（API consumer）のコードはコンパイルエラーや実行時エラーを起こす
+        破壊的変更（breaking change）となる
+        ~\cite{brito2017java-bc,xavier2017why-break-apis}。
+        そのため提供者は削除の前に \texttt{@Deprecated} アノテーションを付与し、
+        消費者が代替機能へ移行するまでの猶予を設けることが慣習となっている
+        ~\cite{sawant2018why-deprecated}。
+  \item \texttt{@Deprecated} を付与する最大の動機は「代替機能の導入（NF）」であり、
+        Sawant et al.~\cite{sawant2018why-deprecated} の調査（Java 4 ライブラリ・374 件）で
+        全体の \textbf{37\%}（138 件）を占める。
+        すなわち、提供者が代替機能 B を追加した時点が
+        旧機能 A を非推奨化すべき自然なタイミングとなっている。
 \end{itemize}
+
+\subsection*{非推奨化が遅延・放置される構造的問題}
+
+\begin{itemize}
+  \item しかし、代替機能が追加された後も旧機能への \texttt{@Deprecated} 付与が
+        長期間遅延するケースが広く存在することが、本研究のパイロット分析で示唆される
+        （詳細は次節）。
+  \item Brito et al.~\cite{brito2017java-bc} が破壊的変更を導入した開発者 56 名に行ったインタビューでは、
+        \texttt{@Deprecated} を付与しなかった 17 名への追加質問において、
+        \textbf{「非推奨化後のメンテナンスコスト増加（44\%）」}が最多回答であった。
+        同論文は「\texttt{@Deprecated} を付与すると削除するまで
+        旧版と新版の両方を並行して更新し続けるコストが生じる」ことを理由として挙げており、
+        開発者は必要性を認識しつつもコストを理由に後回しにしていることが示されている。
+        しかし本研究のパイロット分析では、代替追加から \texttt{@Deprecated} 付与までの
+        平均ラグが \textbf{8年}（2,904 日）であることが観察されており（次節）、
+        先送りによって並行維持期間が長期化し、
+        回避しようとしたコストが逆に増大していることを示唆する。
+  \item さらに、Sawant~\cite{sawant2019api-evolution} は
+        提供者の非推奨化ポリシー（削除積極性等）が消費者の移行行動を直接左右することを
+        大規模分析（25,357 プロジェクト）で実証した。
+        提供者が非推奨化を後回しにすることで、
+        消費者の移行も連鎖的に遅延するという構造的な問題が生じる。
+\end{itemize}
+
+\subsection*{なぜドキュメント非依存の検出が必要か}
+
+現状、先行研究のスコープは付与済みの \texttt{@Deprecated} に限られており、
+付与前の放置候補をプロジェクト全体で体系的に把握するツールは存在しない。
+技術的負債の議論では、問題が定量的に可視化されることで初めて優先付けの対象となる
+\todo{引用が必要（技術的負債の可視化と優先付けに関する先行研究）}。
+前節で示した 8 年の遅延を早めるには、「A に代替 B が存在する」ことを提供者に先行して示す必要がある。
+しかし根本的な困難がある：\textbf{B が A の代替であるという関係は、
+提供者が \texttt{@Deprecated} を付与する時点に初めて宣言されるものである}。
+付与前の段階では B が追加されていてもその代替関係はコード上の事実として確定しておらず、
+Javadoc に代替が明記されているのはパイロット分析でも \textbf{15.9\%} に過ぎない（詳細は次節）。
+
+先行研究（Sawant~\cite{sawant2018why-deprecated,sawant2018deprecation-needs,sawant2019api-evolution}）は
+いずれも付与済みの \texttt{@Deprecated} を起点とするため、
+「付与前の候補発見」はスコープ外であった。
+したがって、提供者の宣言を待たずに候補を提示するには、
+コード構造・使用パターン変化・Git 履歴という客観的シグナルから
+\textbf{代替関係を推定する}アプローチが必要となる。
+本研究は OSS の Git 履歴を用いた遡及的分析により、
+観測可能なシグナルが将来の非推奨化と相関するかを検証する。
 
 \section{Motivation Example}
 
