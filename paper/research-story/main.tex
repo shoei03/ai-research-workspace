@@ -125,20 +125,33 @@ Javadoc にすら書かれていないケースはさらに多数存在するは
 
 \section{アプローチ（提案手法）}
 
-\textbf{ドキュメント非依存の deprecated 候補検出}
+2段階で構成する。
+まず「\textbf{誰が候補か}（Stage 1 $\to$ RQ1）」、
+次に「\textbf{誰を先に処置するか}（Stage 2 $\to$ RQ2）」を問う。
 
-\begin{enumerate}
-  \item \textbf{動機付け分析}（Javadoc 分析 OK）: Motivation Example の数値で「8年放置が常態」を示す
-  \item \textbf{シグナル選定}（ドキュメント禁止）: 以下の特徴量を設計
-    \begin{itemize}
-      \item 使用パターン変化: caller が method A $\rightarrow$ method B へ段階的移行（Git 履歴）
-      \item コード構造類似: 同クラス内での類似シグネチャ・重複パラメータ（AST 解析）
-      \item コミット共変: method B 追加コミットで method A の caller が同時変更
-      \item 命名パターン: \texttt{getX} / \texttt{getXNew}、\texttt{doY} / \texttt{doYV2} など規則的ペア
-    \end{itemize}
-  \item \textbf{検出}: 上記特徴量で非推奨化候補を特定するモデル/ルール
-  \item \textbf{評価}: 後に @Deprecated が付いたメソッドを、付与\textit{前}の時点で検出できるか（precision / recall）
-\end{enumerate}
+\paragraph{Stage 1: 代替ペアの特定}
+Javadoc を用いずに「$A$ の代替 $B$ がすでに存在する」候補ペアを絞り込む。
+以下のシグナルを個別・組み合わせで試す（どれが効くかは RQ1 で明らかにする）。
+
+\begin{itemize}
+  \item \textbf{型互換性}: 戻り値型が一致し引数型が互換（代替の必要条件）。
+        ただし同クラス内で型互換なペアは膨大になるため、絞り込みとしては弱い
+  \item \textbf{命名パターン}: \texttt{getX}/\texttt{getXNew} などの規則的ペア。
+        精度は高いが、易しいケース（おそらく Javadoc にも書かれている）しか取れない可能性
+  \item \textbf{コード構造類似}: 同クラス内の AST 距離・シグネチャ類似度。
+        ただし代替は実装が変わることも多く、類似度の定義（AST／トークン／埋め込み）によって
+        捕まえるものが全く異なる
+  \item \textbf{コミット共変}: $B$ 追加コミットで $A$ の caller が同時変更
+  \item \textbf{caller 段階移行}: $A$ の caller が時間とともに $B$ へ移っていく Git 履歴
+  \item \textbf{LLM ゼロショット}: 上記シグナルが効かない場合の対抗手法として比較
+\end{itemize}
+
+\noindent Javadoc は答え合わせ専用（学習・推論では使わない）。
+
+\paragraph{Stage 2: 優先順位付け}
+Stage 1 で候補が得られたとして、「どれを先に非推奨化すべきか」を問う。
+右打ち切りを伴う時間問題のため、生存分析（Cox モデル等）を軸に検討する。
+出力は提供者向けの\textbf{トリアージリスト}。
 
 \section{Research Questions}
 
