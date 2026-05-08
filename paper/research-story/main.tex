@@ -2,6 +2,7 @@
 \usepackage{../common/macros}
 \usepackage{layout}
 \usepackage{url}
+\usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{array}
 \usepackage{indentfirst}
@@ -141,33 +142,333 @@ Javadoc にすら書かれていないケースはさらに多数存在するは
 
 \section{Research Questions}
 
-\subsection*{動機付け（実証済み、Javadoc 分析）}
+\subsection*{ギャップから RQ への導出}
 
-代替追加 $\rightarrow$ @Deprecated まで平均 8年（NF先 79\%）$\rightarrow$「今この瞬間にも大量の放置候補がある」
+§背景で示した通り、本研究のギャップは
+\textbf{「付与前の deprecated 候補を体系的に発見する手段がない」}ことにある。
+この困難の中核は、\emph{B が A の代替であるという関係はコード上の事実として直接観測できず、
+提供者が \texttt{@Deprecated} を付与する時点に初めて宣言される}という点である。
+パイロット分析が示すように、Javadoc に代替が明記されているのは全体の 15.9\% に過ぎず、
+残り 84.1\% については代替関係が文書化されていない。
 
-\subsection{RQ1: 提案手法は代替機能をどの程度検出できるか}
+そこで本研究は、宣言を待たずに代替関係を推定するために、
+\textbf{Javadoc に頼らずコード構造・使用パターン・Git 履歴から読み取れる手がかり}
+（以下、\textbf{コードと履歴に残る手がかり}）を用いて、
+段階的に二つの問いに答える。
 
+\paragraph{両 RQ 共通の時間軸}
+本研究では、ある観測時点 $T_{\text{obs}}$ における
+\textbf{プロジェクト開始から $T_{\text{obs}}$ までのコード状態と Git 履歴}のみを
+手法の入力とする。すなわち手法は $T_{\text{obs}}$ より未来の情報を一切参照しない。
+RQ1 では $T_{\text{obs}}$ を\emph{変数}として掃引し、
+リードタイム（$T_{\text{dep}} - T_{\text{obs}}$）と検出精度の関係を測る。
+RQ2 では $T_{\text{obs}}$ を最新コミットに固定して実プロジェクトに適用する。
+手法そのものは両者で共通であり、差は \emph{$T_{\text{obs}}$ の置き方}と
+\emph{答え合わせが可能か否か}のみである（表~\ref{tab:rq-timeline}）。
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|p{3.0cm}|p{5.6cm}|p{5.0cm}|}
+  \hline
+  \textbf{段階} & \textbf{RQ1（リードタイム特性の検証）} & \textbf{RQ2（実プロジェクト適用）} \\
+  \hline
+  観測時点 $T_{\text{obs}}$ &
+  各事例ごとに $[T_B + \epsilon,\ T_{\text{dep}} - \epsilon]$ を掃引。
+  $T_B$ は代替 $B$ の追加時点、$T_{\text{dep}}$ は \texttt{@Deprecated} 付与時点 &
+  リポジトリの\emph{最新コミット}時点 \\
+  \hline
+  特徴の観測窓 & プロジェクト開始 $\sim$ $T_{\text{obs}}$ & プロジェクト開始 $\sim$ $T_{\text{obs}}$ \\
+  \hline
+  手法適用時点 & 各 $T_{\text{obs}}$（$A$ はまだ未付与） & $T_{\text{obs}}$（未付与メソッド全体が対象） \\
+  \hline
+  答え合わせ & $T_{\text{dep}}$ 時点の Javadoc 記載 $B$ と照合 & 右打ち切りデータに対する生存分析（Cox 比例ハザード）で C-index・時間依存 AUC を評価 \\
+  \hline
+\end{tabular}
+\caption{RQ1/RQ2 の時間軸}
+\label{tab:rq-timeline}
+\end{table}
+
+\subsection{RQ1: コードと履歴に残る手がかりは、\texttt{@Deprecated} 付与のどれだけ前まで遡って
+代替関係を再現できるか？}
+
+\paragraph{時間軸を一級の変数として扱う理由}
+本研究の動機は「代替 $B$ の追加から \texttt{@Deprecated} 付与までの平均ラグが約 8 年」という事実にある。
+仮に手法が付与直前 $T_{\text{dep}} - \epsilon$ の状態でしか機能しないなら、
+それは付与寸前の状態を確認しているに過ぎず、早期検出には貢献しない。
+逆に $B$ の追加直後 $T_B + \epsilon$ で機能すれば、
+\textbf{8 年のラグを 0 に近づける}ことが原理的に可能となる。
+そこで RQ1 では観測時点 $T_{\text{obs}}$ を $[T_B+\epsilon,\ T_{\text{dep}}-\epsilon]$ の範囲で掃引し、
+\textbf{リードタイム vs 検出精度の特性曲線}を求めることを目的とする。
+
+\paragraph{母集団・入力・予測対象}
 \begin{itemize}
-  \item 説明変数：入出力が同じか、メソッドが類似しているか\todo{検出手法は要検討}
-  \item 検出できたメソッドとできなかったメソッドの違いは何か
-  \item 非推奨化直前だと検出しやすいか
-  \item スナップショットで類似機能を検索し、
+  \item \textbf{母集団}: Java OSS プロジェクト群\todo{プロジェクト選定基準と件数を §評価設計 で定義}
+        から収集した事例 $(A, B, T_B, T_{\text{dep}})$ の集合。
+        $A$ は \texttt{@Deprecated} 付与済みかつ Javadoc に代替メソッドが明記されたメソッド、
+        $B$ はその代替メソッド、$T_B$ は $B$ がコミットに初出現した時点、
+        $T_{\text{dep}}$ は $A$ に \texttt{@Deprecated} が付与された時点。
+        パイロットでは全 \texttt{@Deprecated} の 14.9\%（= 15.9\% $\times$ 93.9\%）が
+        この条件を満たす
+  \item \textbf{各事例ごとの観測時点群}: $T_{\text{obs}}$ を以下の複数点で評価する。
+    \begin{itemize}
+      \item $T_{\text{dep}} - \epsilon$（付与直前。\textbf{最も観測情報が豊富}）
+      \item $T_{\text{dep}} - 1\text{年}, T_{\text{dep}} - 3\text{年}, T_{\text{dep}} - 5\text{年}$
+            （ラグの中盤）
+      \item $T_B + \epsilon$（代替が現れた直後。\textbf{理論値最速}）
+    \end{itemize}
+  \item \textbf{入力}: 各 $T_{\text{obs}}$ について、プロジェクト開始から $T_{\text{obs}}$ までの
+        コード状態と Git 履歴のみ
+  \item \textbf{予測対象}: 各 $T_{\text{obs}}$ において、同一プロジェクト内のメソッド集合の中から、
+        $T_{\text{dep}}$ 時点で Javadoc が指す代替メソッド $B$ を 1 件特定する
+  \item \textbf{答え合わせ}: Javadoc 記載の $B$ と推定結果の一致を Precision / Recall / Recall@$k$ で評価。
+        Javadoc 自体は学習・推論に一切用いず、答え合わせ専用とする
 \end{itemize}
 
-\subsection{RQ2: 代替機能を持つメソッドはどのタイミングで非推奨化可能か（学部研究に近い）}
+\paragraph{評価指標}
 
-\textbf{Javadoc 等のドキュメントを使わず、コード構造・使用パターン・Git 履歴のみで
-「放置 deprecated 候補」を自動検出できるか？}
+RQ1 はランキングタスクである（正解の代替 $B$ は各事例につき 1 件）。
+正解が 1 件のとき Recall@$k$ = Hit Rate@$k$（上位 $k$ 件に $B$ が入るか否かの 0/1）であり、
+Precision@$k$ = Recall@$k$ / $k$ と等価なため Precision は省略する。
 
 \begin{itemize}
-  \item 代替機能が登場した瞬間に予測できるのが理論値最速
+  \item \textbf{Recall@$k$（主指標, $k \in \{1,3,5\}$）}:
+        上位 $k$ 件に正解 $B$ が含まれるか。
+        $k=5$ を主指標とする根拠は、提供者が実際に確認できるショートリストの上限が
+        実務上 5 件程度という前提、およびコード推薦研究での慣例（@1/@5/@10）に従うことにある。
+  \item \textbf{MRR（補助指標）}:
+        $\text{MRR} = \frac{1}{|\mathcal{D}|} \sum \frac{1}{\text{rank}(B)}$。
+        Recall@$k$ が「入ったか否か」の 0/1 しか測れないのに対し、
+        MRR は 2 位と 50 位を区別するため、リードタイムが伸びたときの
+        ランキング悪化の粒度を細かく追える。
+  \item \textbf{リードタイム vs 精度曲線}: 各 $T_{\text{obs}}$ における Recall@5 と MRR をプロットし、
+        付与直前から $T_B$ 直後へ遡るにつれて精度がどう悪化するかを可視化。
+  \item \textbf{実用閾値}: ある精度水準（例: Recall@5 $\geq$ 80\%）を維持できる
+        最大リードタイム（=「8 年中、何年前まで遡れるか」）
 \end{itemize}
 
-\subsubsection*{評価方法}
+\paragraph{ベースラインと比較設計}
+
+比較群を\textbf{役割の異なる3層}に分けて設計する。
+
+\medskip
+\noindent\textbf{層1――下限値の確定}
 
 \begin{itemize}
-  \item Ground Truth: deprecated が付与されたメソッド
-  \item メソッドを見て、今後8年以内でメソッドが非推奨になるかどうか予測
+  \item \textbf{B0: ランダム選択}。
+        同一プロジェクト内のメソッドから無作為に $B$ を1件選ぶ。
+        提案手法が「シグナルなし」の基準を超えることを確認する最低限の参照点
+        （Recall@1 $\approx 1/|M|$ となるべき）。
+\end{itemize}
+
+\medskip
+\noindent\textbf{層2――アブレーション（シグナル別寄与の分離）}
+
+提案手法は命名・コード構造・Git 履歴を統合して用いる。
+各シグナルが\textbf{リードタイム別にいつ立ち上がるか}を分離するために、
+一つずつ有効にした単独モデルを設定する。
+
+\begin{itemize}
+  \item \textbf{B1: 命名規則のみ}。
+        \texttt{getX}/\texttt{getXNew}・\texttt{doY}/\texttt{doYV2} 等の
+        正規表現ペアで候補を生成。$T_B$ 直後から利用可能な最もコストの低いシグナル
+  \item \textbf{B2: コード構造類似のみ}。
+        AST 距離・シグネチャ類似度のみ。Git 履歴を一切参照しない
+  \item \textbf{B3: Git 履歴のみ}。
+        caller 段階移行・コミット共変のみ。AST 解析を行わない
+\end{itemize}
+
+B1〜B3 の\textbf{リードタイム vs 精度曲線}を重ねることで、
+「どのシグナルがいつ有効になるか」を定量化する。
+（仮説: 命名は $T_B$ 直後から有効・Git 移行シグナルは累積に時間を要する）
+
+\medskip
+\noindent\textbf{層3――対抗手法（LLM との対比）}
+
+\begin{itemize}
+  \item \textbf{B4: LLM ゼロショット抽出}。
+        Javadoc を除去したメソッド本体と同一プロジェクト内の候補リストを
+        LLM に与え、代替を1件選ばせる。
+\end{itemize}
+
+B4 はアブレーション（シグナル分離）ではなく、
+\textbf{「LLM だけで十分では？」という代替アプローチとの対比}である。
+この比較が答える問いは、「コードと履歴から計算したシグナルが
+LLM の暗黙知識を超える独自寄与を持つか」であり、とくに
+$T_\text{obs}$ が $T_B$ 直後（Git 履歴が薄い時点）と
+$T_\text{dep}$ 直前（情報が豊富な時点）で逆転が起きるかが焦点となる。
+プロンプト設計・モデルバージョン・API コストは §評価設計で記述する。
+
+\medskip
+すべての比較群を同一の $T_{\text{obs}}$ 掃引で評価し、
+\textbf{リードタイム vs 精度曲線}を重ねて描く。
+
+\paragraph{スコープ境界と反証可能性}
+
+本手法はすべての代替関係を当てることを目指さない。
+コード構造・使用パターン・Git 履歴のいずれかに痕跡を残すサブセットのみを対象とする。
+
+\textbf{反証可能な主張}:
+本研究の中核的主張は「\textbf{ランダム選択（B0）を有意に上回る
+リードタイム範囲が少なくとも1つ存在する}」ことである。
+この主張は以下の形で反証される：
+
+\begin{itemize}
+  \item $T_\text{obs} = T_\text{dep} - \epsilon$（情報が最も豊富な時点）においてすら
+        Recall@5 が B0 水準を上回らない場合 →
+        観測可能なシグナルに代替関係の情報は\emph{含まれない}という否定的結論を報告する
+  \item 有意に上回る範囲が存在しても、
+        その最大リードタイムが 1 年未満にとどまる場合 →
+        「8 年のラグを縮める」という実用価値は限定的であることを認める
+\end{itemize}
+
+「リードタイムが長いほど精度が下がる」傾向自体は否定せず、
+\textbf{悪化の度合いと、実用的な閾値（例: Recall@5 $\geq$ 80\% を維持できる最大リードタイム）
+を定量化する}ことを RQ1 の貢献とする。
+さらに、当てられた事例と外した事例の差を分析することで
+\textbf{「本手法が機能する条件」}（例: caller の段階的移行が観測できる場合・
+命名が規則的ペアの場合 等）を明示し、
+適用可能な文脈を提供者に示す。
+
+\subsection{RQ2: RQ1 で同定された代替候補を共変量とする生存分析モデルは、
+\texttt{@Deprecated} 付与のハザードをどの程度の精度でランク付けできるか？}
+
+\paragraph{RQ1 から RQ2 への設計上の連鎖}
+
+RQ1 が答えるのは「\textbf{どのメソッド $A$ に対して代替 $B$ がすでに存在するか}」という
+per-pair の問いである。
+しかし提供者が実際に必要とするのは「\textbf{プロジェクト内の未付与メソッド全体の中で、
+どれを先に非推奨化すべきか}」という優先順位付けである。
+前者は代替関係の有無を明らかにするが、
+複数の候補が存在するとき\emph{どれが急を要するか}は答えない。
+
+この問いは本質的に時間の問題であり、二値分類や回帰では扱えない。
+未付与メソッドのうち将来付与されるものは\emph{右打ち切り}されているが、
+これはまさに生存分析（survival analysis）が設計された問題設定である。
+そこで RQ2 は RQ1 で同定された代替候補を共変量として取り込み、
+\textbf{時間依存共変量を含む拡張 Cox 比例ハザードモデル}で
+ハザード順ランキングを提供者に提供する。
+
+\textbf{RQ1 への依存リスクと頑健性}:
+RQ2 の問題設定（§生存分析の問題設定）は
+「RQ1 の手法で代替候補 $B$ が同定された全 $A$」を観察対象とするため、
+RQ1 の再現率が低ければ RQ2 の対象母集団も縮小する。
+しかし RQ2 のモデルは RQ1 の出力を\emph{共変量の一つ}として扱うに過ぎず、
+命名・AST 距離・Git 履歴等の共変量は RQ1 とは独立に計算できる。
+ベースライン S4（RQ1 結果を共変量に含めない Cox）との差分が
+「RQ1 の出力が RQ2 のランキング精度に与える上乗せ分」を定量化し、
+両 RQ の連鎖が実用的に成立することを裏付ける。
+
+\paragraph{生存分析の問題設定}
+\begin{itemize}
+  \item \textbf{観察対象（subject）}: RQ1 の手法で代替候補 $B$ が同定された全 $A$
+  \item \textbf{時間原点 $t=0$}: $T_B$（代替メソッド $B$ が初出現したコミット時点）
+  \item \textbf{イベント}: $A$ に \texttt{@Deprecated} が付与される
+  \item \textbf{観察時間}:
+    \begin{itemize}
+      \item イベント発生例: $T_{\text{dep}} - T_B$
+      \item 右打ち切り例: $T_{\text{now}} - T_B$
+    \end{itemize}
+  \item \textbf{時間不変共変量}: 命名規則ペアか否か、$A$ と $B$ の AST 距離・シグネチャ類似度 等
+  \item \textbf{時間依存共変量}: $A$ の caller のうち $B$ へ移行した割合、
+        コミット共変累積回数、$B$ の caller 数の伸び率 等
+  \item \textbf{モデル}: 拡張 Cox 比例ハザードモデル
+\end{itemize}
+
+\paragraph{母集団}
+\begin{itemize}
+  \item \textbf{イベント発生群}: Javadoc に代替が明記され \texttt{@Deprecated} が
+        付与された 14.9\% の事例（$T_{\text{dep}}$ が観測される）
+  \item \textbf{右打ち切り群}: 最新スナップショット時点で未付与のメソッドのうち、
+        RQ1 の手法で代替候補 $B$ が同定されたもの（$T_{\text{now}}$ で打ち切り）
+\end{itemize}
+
+\paragraph{評価指標}
+
+RQ2 が答える問いは「ハザード順位の精度」と「予測確率の信頼性」の両面を含む。
+5 指標を役割別に 3 群に分けて設定する。
+
+\medskip
+\noindent\textbf{群1――ランキング精度（RQ2 の中核）}
+\begin{itemize}
+  \item \textbf{Concordance index（C-index）}:
+        無作為に選んだ2メソッドのうち先に非推奨化される方を正しくランクできる確率。
+        提供者向けトリアージリストの精度に直結するため主指標とする
+        （0.5 = ランダム、1.0 = 完全予測）
+  \item \textbf{時間依存 AUROC（1 年・3 年・5 年）}:
+        「$t$ 年以内に付与されるか」という各地平線での二値識別能力。
+        C-index が全時間軸を一括評価するのに対し、
+        提供者が計画する具体的な期間（次期リリースサイクル等）で識別できるかを測る。
+        地平線ごとに性能プロファイルが異なれば、
+        「短期予測は得意・長期は苦手」という実用上の限界として報告する
+\end{itemize}
+
+\medskip
+\noindent\textbf{群2――キャリブレーション（ランキングを確率として使えるか）}
+\begin{itemize}
+  \item \textbf{Brier スコア}:
+        $\hat{S}(t \mid x)$（予測生存確率）と実測値の平均二乗誤差。
+        C-index はランキング順位しか評価せず、
+        「ハザード 0.8」が本当に 80\% の確率を意味するかは測れない。
+        §応用で上位 $N$ 件を選ぶ際の閾値設定を信頼できるものにするために必要。
+        また S2（ロジスティック回帰、右打ち切り無視）との Brier 差が
+        「打ち切りを正しく扱うことでキャリブレーションが改善するか」を示す
+\end{itemize}
+
+\medskip
+\noindent\textbf{群3――可視化と解釈（結果の説明可能性）}
+\begin{itemize}
+  \item \textbf{Kaplan--Meier 曲線}:
+        評価指標ではなく可視化ツール。
+        パイロットの「平均 8 年ラグ」を単一数値ではなく生存関数の分布として描き、
+        「ハザードの高い群 vs 低い群」の層別 KM 曲線で
+        モデルが実際に分離できているかを視覚的に確認する
+  \item \textbf{ハザード比}:
+        各共変量の効果量を表す解釈ツール。
+        （例: 「caller 移行率が 50\% 進むとハザード $X$ 倍」）
+        提供者が「どのシグナルが最も非推奨化を促進するか」を理解するための
+        Actionable Insight として提示する
+\end{itemize}
+
+\paragraph{ベースラインと比較設計}
+RQ2 の核心は\textbf{「なぜ生存分析でなければならないか」}と
+\textbf{「なぜ時間依存共変量が必要か」}を定量的に示すことにある。
+そのため、評価対象を提案手法（時間依存共変量を含む拡張 Cox）と以下のベースラインで対比する。
+\begin{itemize}
+  \item \textbf{S0: ランダムランキング}。下限値の確定（C-index $\approx 0.5$ となるべき）
+  \item \textbf{S1: メソッド年齢ランキング}。「古い順に並べれば良いのでは？」という素朴反論への防御。
+        パイロットの 8 年ラグから自然に導かれる仮説
+  \item \textbf{S2: ロジスティック回帰（主ベースライン）}。右打ち切りを単に「未付与 = 負例」として扱い、
+        全共変量を投入。\textbf{S2 と提案手法の C-index・Brier 差が、生存分析採用の必要性そのもの}を表す
+  \item \textbf{S3: 時間依存共変量を除外した Cox}（時間不変共変量のみ）。
+        S3 と提案手法の差が\textbf{動的シグナル（caller 移行率等）の寄与}を表す
+  \item \textbf{S4: RQ1 結果を共変量に含めない Cox}。
+        段階的設計（RQ1 $\rightarrow$ RQ2）の連鎖が実用ランキングに寄与することを裏付ける
+\end{itemize}
+主張ラインは二段：S2 との差で「打ち切りを正しく扱う必要性」、
+S3 との差で「時間依存共変量の必要性」を順に示し、
+両者が同時に効いて初めて\textbf{拡張 Cox という選択}が正当化されるという論理にする。
+
+\paragraph{応用: 提供者向けランキング}
+学習済みモデルを最新スナップショット時点に適用し、
+未付与メソッドを\textbf{現時点でのハザード}でランク付けする。
+上位 $N$ 件は提供者がトリアージすべき候補となる。
+サンプル定性検証（コミット履歴・Issue・PR を手動確認）により、
+「妥当な候補」「誤検出」「議論済みで意図的に放置」を分類する。
+
+\paragraph{スコープ境界・前提}
+\begin{itemize}
+  \item \textbf{選択バイアス}: イベントを生むのは過去に \texttt{@Deprecated} を付与した
+        経験のある提供者のみ。一切付与しないプロジェクトは無限打ち切り扱いとなり、
+        ベースラインハザードを下方に歪める可能性がある
+  \item \textbf{意図的先送りの扱い}: Brito et al.~\cite{brito2017java-bc} が報告した
+        「コスト懸念で意図的に未付与」は競合リスク（competing risk）として扱う余地があるが、
+        永久放置の判定は原理的に不可能なため本研究では単一イベント Cox に留める
+  \item \textbf{時間原点の定義}: $T_B$ を「$B$ の最初のコミット」とするが、
+        テスト未整備な初期版を含む可能性があるため §評価設計で頑健性を検証する
+        \todo{T\_B の定義の頑健性検証方針を §評価設計 で詳述}
+  \item \textbf{比例ハザード仮定}: caller 移行効果は時間と共に変化し得るため、
+        Schoenfeld 残差検定で仮定の妥当性を検証する
 \end{itemize}
 
 \section{期待される貢献}
@@ -176,7 +477,10 @@ Javadoc にすら書かれていないケースはさらに多数存在するは
   \item[$\checkmark$] 代替追加 $\rightarrow$ @Deprecated のラグが平均8年という定量的実証（パイロット済み）
   \item[$\square$] 複数 Java OSS プロジェクトにわたる大規模定量分析（RQ1）
   \item[$\square$] ドキュメント非依存の特徴量設計（コード構造・使用パターン・Git）
-  \item[$\square$] 上記特徴量による deprecated 候補検出手法の提案と精度評価（RQ2）
+  \item[$\square$] アブレーション（命名／構造／履歴／LLM ゼロショット）による
+        \textbf{手がかり別寄与のリードタイム特性}の定量化（RQ1）
+  \item[$\square$] 上記特徴量と生存分析を組み合わせた deprecated 候補ランキング手法の提案と、
+        打ち切り無視ロジスティック・時間依存共変量なし Cox との比較による有効性検証（RQ2）
 \end{itemize}
 
 \section{差別化・位置づけ}
